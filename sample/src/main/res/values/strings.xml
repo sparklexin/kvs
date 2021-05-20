@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">KeyValueStore</string>
+    <string name="key">key</string>
+    <string name="value">value</string>
+    <string name="put_int">putInt</string>
+    <string name="put_int_expired">putIntExpired</string>
+    <string name="get_int">getInt</string>
+    <string name="remove_int">removeInt</string>
+    <string name="clear_all">clear all</string>
+    <string name="clear_expired">clear expired</string>
+    <string name="get_int_as_live_data">getIntAsLiveData</string>
+</resources>

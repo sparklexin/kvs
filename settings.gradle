@@ -1,0 +1,3 @@
+include ':kvs'
+include ':sample'
+rootProject.name = "KeyValueStore"
