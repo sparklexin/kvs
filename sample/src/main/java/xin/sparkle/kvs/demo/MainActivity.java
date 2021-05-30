@@ -14,7 +14,6 @@ import java.util.concurrent.TimeUnit;
 import xin.sparkle.kvs.KVS;
 import xin.sparkle.kvs.core.KeyValueStore;
 
-
 public class MainActivity extends AppCompatActivity {
 
     private LiveData<Optional<Integer>> optionalLiveData;
