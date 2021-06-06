@@ -1,12 +1,16 @@
 package xin.sparkle.kvs.internal.room;
 
+import android.text.TextUtils;
+
 import androidx.annotation.NonNull;
 import androidx.annotation.RestrictTo;
 import androidx.arch.core.util.Function;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MediatorLiveData;
+import androidx.lifecycle.Observer;
 
 import java.lang.reflect.Type;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -217,7 +221,7 @@ public class RoomKeyValueStore implements KeyValueStore {
 
     private <T> LiveData<Optional<T>> getAsLiveData(String key, String type, Function<String, T> mapper, Executor mapExecutor) {
         MediatorLiveData<Optional<T>> mediatorLiveData = new MediatorLiveData<>();
-        mediatorLiveData.addSource(dao.getAsLivaData(key, type), keyValueList -> {
+        mediatorLiveData.addSource(dao.getAsLivaData(key, type), new DistinctObserver(keyValueList -> {
             KeyValue keyValue = keyValueList == null || keyValueList.isEmpty() ? null : keyValueList.get(0);
             if (isValid(keyValue)) {
                 Runnable runnable = () -> {
@@ -228,7 +232,7 @@ public class RoomKeyValueStore implements KeyValueStore {
             } else {
                 mediatorLiveData.postValue(Optional.empty());
             }
-        });
+        }, this::isValid));
         return mediatorLiveData;
     }
 
@@ -263,5 +267,57 @@ public class RoomKeyValueStore implements KeyValueStore {
     @Override
     public void clearExpired() {
         dao.clear(config.currentTimeMillis());
+    }
+
+    static class DistinctObserver implements Observer<List<KeyValue>> {
+        Identifier cachedIdentifier;
+
+        final Observer<List<KeyValue>> downstreamObserver;
+        final Function<KeyValue, Boolean> validChecker;
+
+        DistinctObserver(@NonNull Observer<List<KeyValue>> downstreamObserver, @NonNull Function<KeyValue, Boolean> validChecker) {
+            this.downstreamObserver = downstreamObserver;
+            this.validChecker = validChecker;
+        }
+
+        @Override
+        public void onChanged(List<KeyValue> keyValues) {
+            if (checkChanged(keyValues)) {
+                downstreamObserver.onChanged(keyValues);
+            }
+        }
+
+        private boolean checkChanged(List<KeyValue> newList) {
+            Identifier newIdentifier = generateIdentifier(newList);
+            boolean changed = !isIdentifierSame(cachedIdentifier, newIdentifier);
+            cachedIdentifier = newIdentifier;
+            return changed;
+        }
+
+        private Identifier generateIdentifier(List<KeyValue> keyValueList) {
+            KeyValue keyValue = keyValueList == null || keyValueList.isEmpty() ? null : keyValueList.get(0);
+            if (keyValue != null) {
+                boolean isValid = validChecker.apply(keyValue);
+                return new Identifier(keyValue.value, isValid);
+            } else {
+                return null;
+            }
+        }
+
+        private boolean isIdentifierSame(Identifier o1, Identifier o2) {
+            if (o1 == o2) return true;
+            if (o1 == null || o2 == null) return false;
+            return TextUtils.equals(o1.value, o2.value) && (o1.isValid == o2.isValid);
+        }
+
+        static class Identifier {
+            String value;
+            boolean isValid;
+
+            Identifier(String value, boolean isValid) {
+                this.value = value;
+                this.isValid = isValid;
+            }
+        }
     }
 }

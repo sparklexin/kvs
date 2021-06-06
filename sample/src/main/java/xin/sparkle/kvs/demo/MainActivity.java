@@ -1,14 +1,14 @@
 package xin.sparkle.kvs.demo;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.lifecycle.LiveData;
-import androidx.lifecycle.Observer;
 
-import java.util.Optional;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import xin.sparkle.kvs.KVS;
@@ -16,8 +16,7 @@ import xin.sparkle.kvs.core.KeyValueStore;
 
 public class MainActivity extends AppCompatActivity {
 
-    private LiveData<Optional<Integer>> optionalLiveData;
-    private Observer<Optional<Integer>> observer;
+    private final Set<String> observersKey = new HashSet<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,20 +44,18 @@ public class MainActivity extends AppCompatActivity {
 
         findViewById(R.id.getIntAsLiveData).setOnClickListener(v -> {
             String key = getKeyFromEditText();
-            if (optionalLiveData != null) {
-                optionalLiveData.removeObserver(observer);
+            if (observersKey.contains(key)) {
+                return;
             }
-
-            optionalLiveData = kvs.getIntAsLiveData(key);
-            observer = optionalInt -> {
+            observersKey.add(key);
+            kvs.getIntAsLiveData(key).observe(this, optionalInt -> {
                 if (optionalInt.isPresent()) {
                     int value = optionalInt.get();
                     toast(String.format("getAsLiveData() key:{%s}, new value: {%s}", key, value));
                 } else {
                     toast(String.format("getAsLiveData() key:{%s} is not exist!", key));
                 }
-            };
-            optionalLiveData.observe(this, observer);
+            });
         });
 
         findViewById(R.id.removeInt).setOnClickListener(v -> {
@@ -66,13 +63,11 @@ public class MainActivity extends AppCompatActivity {
             kvs.removeInt(key);
         });
 
-        findViewById(R.id.clearExpired).setOnClickListener(v -> {
-            kvs.clearExpired();
-        });
+        findViewById(R.id.clearExpired).setOnClickListener(v -> kvs.clearExpired());
 
-        findViewById(R.id.clearAll).setOnClickListener(v -> {
-            kvs.clearAll();
-        });
+        findViewById(R.id.clearAll).setOnClickListener(v -> kvs.clearAll());
+
+        findViewById(R.id.jump).setOnClickListener(v -> startActivity(new Intent(this, NextActivity.class)));
     }
 
     private String getKeyFromEditText() {
@@ -91,6 +86,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void toast(String msg) {
-        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, String.format("[%s] %s", getClass().getSimpleName(), msg), Toast.LENGTH_SHORT).show();
     }
 }

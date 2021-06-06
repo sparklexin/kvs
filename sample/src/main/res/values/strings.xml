@@ -9,4 +9,5 @@
     <string name="clear_all">clear all</string>
     <string name="clear_expired">clear expired</string>
     <string name="get_int_as_live_data">getIntAsLiveData</string>
+    <string name="jump">open new activity</string>
 </resources>

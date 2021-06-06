@@ -20,7 +20,7 @@ allprojects {
 模块`build.gradle`添加依赖
 ```groovy
 dependencies {
-	  implementation 'com.github.sparklexin:kvs:1.0.0'
+	  implementation 'com.github.sparklexin:kvs:{latest_version}'
 }
 ```
 ### 1.2 java8配置
